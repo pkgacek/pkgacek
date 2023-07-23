@@ -1,16 +1,14 @@
-### Hi there 👋
+# **Piotr Gacek**
 
-<!--
-**pkgacek/pkgacek** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
+## **Remote senior front end developer with +4 years of experience. Focused on user experience, design, clean code and accessibility.**
 
-Here are some ideas to get you started:
+- Link: [linkedin.com/in/lesson-learned/](https://www.linkedin.com/in/lesson-learned/)
 
-- 🔭 I’m currently working on ...
-- 🌱 I’m currently learning ...
-- 👯 I’m looking to collaborate on ...
-- 🤔 I’m looking for help with ...
-- 💬 Ask me about ...
-- 📫 How to reach me: ...
-- 😄 Pronouns: ...
-- ⚡ Fun fact: ...
--->
+### Skills
+
+---
+
+- **Technologies**: Axios, Bash, Confluence, Conventional Commits, CSS, Django, Django Rest Framework, ESLint, Git, GitHub Actions, HTML, HTML5, Husky, JavaScript, Jest, Jira, jQuery, MySQL, Next.js, Postman, React, React Context API, React Error Boundaries, React Hooks, React Testing Library, Redux, Redux Thunk, and SASS
+- **Concepts**: authentication design patterns, front end development, REST APIs, Software Development, ui, ux, and Web Applications
+- **Traits**: consistency, responsive, reactive, responsibility taker, excellent verbal communication skills, sense of humor, leader, detail oriented, problem solving skills, interpersonal skills
+- **Languages**: Polish (native), English (full working proficiency)
