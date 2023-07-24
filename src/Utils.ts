@@ -298,7 +298,8 @@ function isDataSheet(sheetName: string) {
   return (
     !sheetName.includes("Settings - ") &&
     !sheetName.includes("Range - ") &&
-    !sheetName.includes("Resume")
+    !sheetName.includes("Resume") &&
+    !sheetName.includes("Cover Letter")
   );
 }
 
@@ -408,4 +409,53 @@ function makeId(length = 5) {
     counter += 1;
   }
   return result;
+}
+
+type FileType = {
+  doc: GoogleAppsScript.Document.Document;
+  body: GoogleAppsScript.Document.Body;
+  id: string;
+  markdown: string[];
+  current:
+    | GoogleAppsScript.Document.Paragraph
+    | GoogleAppsScript.Document.ListItem;
+};
+/**
+ * @name createFiles
+ * @description
+ * @returns
+ */
+function createFiles() {
+  const details = ["resume", "cover_letter"].reduce<
+    Record<"resume" | "cover_letter", FileType>
+  >(
+    (acc, val, idx) => {
+      const doc = DocumentApp.create(`Resumer - ${idx}`);
+      const id = doc.getId();
+      const body = doc.getBody();
+      const markdown = [];
+      const current = "";
+
+      addResume("", "");
+      body.setText("");
+      deleteAllParagraphs(body);
+      body.clear();
+
+      acc[val] = {
+        doc,
+        body,
+        id,
+        markdown,
+        current,
+      };
+
+      return acc;
+    },
+    { resume: {}, cover_letter: {} } as {
+      resume: FileType;
+      cover_letter: FileType;
+    },
+  );
+
+  return details;
 }

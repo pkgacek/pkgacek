@@ -29,10 +29,13 @@ function recalculate() {
  * @returns
  */
 function getResume() {
-  const resumeUrl = createResume();
+  const { resumeId, coverLetterId } = createResume();
   const ui = SpreadsheetApp.getUi();
   const html = [
-    `<a href="${resumeUrl}" target="_blank" rel="noopener noreferrer">Go to your resume</a>`,
+    "Checkout files:",
+    `<a href="https://docs.google.com/document/d/${resumeId}/edit" target="_blank" rel="noopener noreferrer">Go to your Resume</a>`,
+    "<br>",
+    `<a href="https://docs.google.com/document/d/${coverLetterId}/edit" target="_blank" rel="noopener noreferrer">Go to your Cover Letter</a>`,
   ];
   const htmlOutput = HtmlService.createHtmlOutput(html.join("\n"))
     .setWidth(400)
@@ -42,14 +45,34 @@ function getResume() {
 /**
  * @name addResume
  * @param resume
+ * @param coverLetter
  * @description This function changes the value of resume cell
  * @returns
  */
-function addResume(resume: string) {
-  const sheet = SpreadsheetApp.getActive().getSheetByName("Resume");
-  const cell = sheet.getRange("A2");
-  cell.setValue(resume);
+function addResume(resume: string, coverLetter: string) {
+  const resumeSheet =
+    SpreadsheetApp.getActive().getSheetByName("Resume - Markdown");
+  const resumeCell = resumeSheet.getRange("A2");
+  resumeCell.setValue(resume);
+
+  const coverLetterSheet = SpreadsheetApp.getActive().getSheetByName(
+    "Cover Letter - Markdown",
+  );
+  const coverLetterCell = coverLetterSheet.getRange("A2");
+  coverLetterCell.setValue(coverLetter);
 }
+/**
+ * @name getCoverLetter
+ * @description This function changes the value of resume cell
+ * @returns
+ */
+function getCoverLetter(): string {
+  const coverLetterSheet =
+    SpreadsheetApp.getActive().getSheetByName("Cover Letter");
+  const coverLetterCell = coverLetterSheet.getRange("A2");
+  return coverLetterCell.getValue();
+}
+
 /**
  * @name GETCOLUMNDATA
  * @description Parses all sheets by provided header and returns all data.

@@ -1,30 +1,105 @@
 /**
  * @name createResume
- * @description
+ * @description This generates a new resume as well as new cover letter file.
  * @returns
  */
-function createResume() {
-  let markdown = [];
-  var CURRENT:
-    | GoogleAppsScript.Document.Paragraph
-    | GoogleAppsScript.Document.ListItem;
-  const DOC = DocumentApp.create("Resumer");
-  const DOC_ID = DOC.getId();
-  const BODY = DOC.getBody();
-  addResume("");
-  BODY.setText("");
-  deleteAllParagraphs(BODY);
-  BODY.clear();
+function createResume(): {
+  resumeId: string;
+  coverLetterId: string;
+} {
+  const { resume, cover_letter } = createFiles();
+  const {
+    id: resumeId,
+    doc: resumeDoc,
+    body: resumeBody,
+    markdown: resumeMarkdown,
+  } = resume;
+  const {
+    id: coverLetterId,
+    doc: coverLetterDoc,
+    body: coverLetterBody,
+    markdown: coverLetterMarkdown,
+  } = cover_letter;
+  let resumeCurrent = resume.current;
+  let coverLetterCurrent = cover_letter.current;
+  let resumeName: string;
+  let coverLetterName: string;
+  const randomId = makeId();
   const data = getAllSheetsData();
   const parsedData = Object.entries(data);
+  /**
+   * @name setName
+   * @description
+   * @param name
+   * @param doc
+   * @param body
+   * @param markdown
+   * @param isCoverLetter
+   * @returns
+   */
+  function setName(
+    name: string,
+    doc = resumeDoc,
+    body = resumeBody,
+    markdown = resumeMarkdown,
+    isCoverLetter = false,
+  ): {
+    H1: GoogleAppsScript.Document.Paragraph;
+    fileName: string;
+  } {
+    const H1 = setParagraph(body, name);
+    H1.setAttributes({
+      [DocumentApp.Attribute.HEADING]: DocumentApp.ParagraphHeading.HEADING1,
+      [DocumentApp.Attribute.BOLD]: true,
+      [DocumentApp.Attribute.FONT_SIZE]: 18,
+    });
+    markdown.push(`# **${name}**`);
+    addLineBreak(H1, 3);
+    H1.setAttributes({
+      [DocumentApp.Attribute.BOLD]: true,
+    });
+    const fileName = `${
+      isCoverLetter ? "Cover Letter" : "Resume"
+    } - ${name} - ${formatDate(new Date())} - ${randomId}`;
+    doc.setName(fileName);
+    return { H1, fileName };
+  }
+  /**
+   * @name setHeadline
+   * @description
+   * @param headline
+   * @param body
+   * @param markdown
+   * @param current
+   * @returns
+   */
+  function setHeadline(
+    headline: string,
+    body = resumeBody,
+    markdown = resumeMarkdown,
+  ): GoogleAppsScript.Document.Paragraph {
+    const P = setParagraph(body, headline);
+    P.setAttributes({
+      [DocumentApp.Attribute.FONT_SIZE]: 12,
+      [DocumentApp.Attribute.BOLD]: true,
+    });
+    markdown.push("", `## **${headline}**`);
+    addLineBreak(P, 3);
+    return P;
+  }
   /**
    * @name generateHeading
    * @description
    * @param value
+   * @param body
    * @returns
    */
-  function generateHeading(value: string) {
-    const H2 = BODY.appendParagraph(value);
+  function generateHeading(
+    value: string,
+    body = resumeBody,
+    markdown = resumeMarkdown,
+  ) {
+    const H2 = body.appendParagraph(value);
     H2.setAttributes({
       [DocumentApp.Attribute.BOLD]: true,
     });
@@ -42,8 +117,14 @@ function createResume() {
    * @description
    * @param key
    * @param value
-   * @param indent
    * @param url
+   * @param config
+   * @param config.indent
+   * @param config.fontSize
+   * @param config.bold
+   * @param config.italic
+   * @param markdown
+   * @param current
    * @returns
    */
   function generateDetail(
@@ -56,38 +137,48 @@ function createResume() {
       bold?: boolean;
       italic?: boolean;
     },
-  ) {
+    body = resumeBody,
+    markdown = resumeMarkdown,
+  ): GoogleAppsScript.Document.Paragraph {
     const indentValue = config && config.indent ? MARKDOWN_INDENT : "";
+    let current: GoogleAppsScript.Document.Paragraph;
     if (url) {
-      CURRENT = setParagraph(BODY, `${key}: `, {
+      current = setParagraph(body, `${key}: `, {
         indent: config?.indent || 0,
       });
-      const paragraphUrl = setParagraph(BODY, value, {
+      const paragraphUrl = setParagraph(body, value, {
         indent: config?.indent || 0,
       }).setLinkUrl(url);
       paragraphUrl.merge();
       markdown.push(`${indentValue}- ${key}: [${value}](${url})`);
     } else {
-      CURRENT = setParagraph(BODY, `${key}: ${value}`, {
+      current = setParagraph(body, `${key}: ${value}`, {
         indent: config?.indent || 0,
       });
       markdown.push(`${indentValue}- ${key}: ${value}`);
     }
-    CURRENT.setAttributes({
+    current.setAttributes({
       [DocumentApp.Attribute.FONT_SIZE]: config?.fontSize || 9,
       [DocumentApp.Attribute.ITALIC]: config?.italic || true,
       [DocumentApp.Attribute.BOLD]: config?.bold || false,
     });
+
+    return current;
   }
   /**
    * @name generateEmptyParagraph
    * @description
    * @param config
+   * @param config.indent
+   * @param current
    * @returns
    */
-  function generateEmptyParagraph(config?: { indent?: number }) {
-    CURRENT = setParagraph(BODY, "", { indent: config?.indent || 1 });
-    CURRENT.setAttributes({
+  function generateEmptyParagraph(
+    config?: { indent?: number },
+    current = resumeCurrent,
+  ) {
+    current = setParagraph(resumeBody, "", { indent: config?.indent || 1 });
+    current.setAttributes({
       [DocumentApp.Attribute.FONT_SIZE]: 0,
       [DocumentApp.Attribute.ITALIC]: false,
       [DocumentApp.Attribute.BOLD]: false,
@@ -99,6 +190,8 @@ function createResume() {
    * @param key
    * @param value
    * @param config
+   * @param config.indent
+   * @param markdown
    * @returns
    */
   function generateInformations(
@@ -107,22 +200,27 @@ function createResume() {
     config?: {
       indent?: number;
     },
+    markdown = resumeMarkdown,
   ) {
-    CURRENT = setParagraph(BODY, key, { indent: config?.indent || 1 });
-    CURRENT.setAttributes({
+    const current = setParagraph(resumeBody, key, {
+      indent: config?.indent || 1,
+    });
+    current.setAttributes({
       [DocumentApp.Attribute.FONT_SIZE]: 9,
       [DocumentApp.Attribute.ITALIC]: false,
       [DocumentApp.Attribute.BOLD]: true,
     });
-    CURRENT.appendText(`: ${value}`).setAttributes({
+    current.appendText(`: ${value}`).setAttributes({
       [DocumentApp.Attribute.FONT_SIZE]: 9,
       [DocumentApp.Attribute.ITALIC]: false,
       [DocumentApp.Attribute.BOLD]: false,
     });
-    addLineBreak(CURRENT, 3);
+    addLineBreak(current, 3);
     markdown.push(
       `${config?.indent ? MARKDOWN_INDENT : ""}- **${key}**: ${value}`,
     );
+
+    return current;
   }
   for (let i = 0; i < parsedData.length; i++) {
     const [k, v] = parsedData[i];
@@ -152,7 +250,7 @@ function createResume() {
         if (row.enable) {
           const { url, organization } = row;
           const title = getFormattedTitle(row);
-          const LI = setListItem(BODY, "", 0);
+          const LI = setListItem(resumeBody, "", 0);
           LI.appendText(title);
           let titleMarkdown = `- #### **${title}**`;
           if (organization) {
@@ -174,7 +272,7 @@ function createResume() {
             [DocumentApp.Attribute.ITALIC]: false,
           });
           addLineBreak(LI, 3);
-          markdown.push(titleMarkdown);
+          resumeMarkdown.push(titleMarkdown);
           const indent: number = LI.getIndentStart();
           const {
             location,
@@ -195,22 +293,32 @@ function createResume() {
             locationType,
           );
           if (formattedDate)
-            generateDetail(getFormattedDatePrefix(row), formattedDate, "", {
+            resumeCurrent = generateDetail(
+              getFormattedDatePrefix(row),
+              formattedDate,
+              "",
+              {
+                indent,
+              },
+            );
+          if (formattedLocation)
+            resumeCurrent = generateDetail("Location", formattedLocation, "", {
               indent,
             });
-          if (formattedLocation)
-            generateDetail("Location", formattedLocation, "", { indent });
-          if (grade) generateDetail("Grade", grade, "", { indent });
-          if (thesis) generateDetail("Thesis", thesis, "", { indent });
-          if (cause) generateDetail("Cause", cause, "", { indent });
+          if (grade)
+            resumeCurrent = generateDetail("Grade", grade, "", { indent });
+          if (thesis)
+            resumeCurrent = generateDetail("Thesis", thesis, "", { indent });
+          if (cause)
+            resumeCurrent = generateDetail("Cause", cause, "", { indent });
           if (credentialId || credentialUrl)
-            generateDetail(
+            resumeCurrent = generateDetail(
               "Credential",
               `${credentialId || "Check credential"}`,
               credentialUrl,
               { indent },
             );
-          addLineBreak(CURRENT, 3);
+          addLineBreak(resumeCurrent, 3);
           if (description) {
             const DESCRIPTION_LIST_ITEMS = description
               .split("\n")
@@ -218,7 +326,7 @@ function createResume() {
                 const nestingLevel = calcNestingLevel(el) + 1;
                 const formattedString = el.replace(/^((\s+-)|-) /, "");
                 const ListItem = setListItem(
-                  BODY,
+                  resumeBody,
                   formattedString,
                   nestingLevel,
                 );
@@ -233,7 +341,7 @@ function createResume() {
                 } else if (idx !== arr.length - 1) {
                   addLineBreak(ListItem, 1.5);
                 }
-                markdown.push(
+                resumeMarkdown.push(
                   `${MARKDOWN_INDENT.repeat(
                     nestingLevel + 1,
                   )}- ${formattedString}`,
@@ -248,13 +356,21 @@ function createResume() {
             generateEmptyParagraph({ indent });
           } else {
             if (technologies)
-              generateInformations("Technologies used", technologies, {
+              resumeCurrent = generateInformations(
+                "Technologies used",
+                technologies,
+                {
+                  indent,
+                },
+              );
+            if (concepts)
+              resumeCurrent = generateInformations("Concepts used", concepts, {
                 indent,
               });
-            if (concepts)
-              generateInformations("Concepts used", concepts, { indent });
             if (links) {
-              const LINK_PARAGRAPH = setParagraph(BODY, "Links: ", { indent });
+              const LINK_PARAGRAPH = setParagraph(resumeBody, "Links: ", {
+                indent,
+              });
               LINK_PARAGRAPH.setAttributes({
                 [DocumentApp.Attribute.FONT_SIZE]: 9,
                 [DocumentApp.Attribute.ITALIC]: false,
@@ -279,7 +395,7 @@ function createResume() {
                 }
                 markdownLinkList += `${formattedString}${separator}`;
               });
-              markdown.push(markdownLinkList);
+              resumeMarkdown.push(markdownLinkList);
               addLineBreak(LINK_PARAGRAPH, 3);
             }
           }
@@ -310,32 +426,38 @@ function createResume() {
         traits: string;
       };
       if (name) {
-        const H1 = setParagraph(BODY, name);
-        H1.setAttributes({
-          [DocumentApp.Attribute.HEADING]:
-            DocumentApp.ParagraphHeading.HEADING1,
-          [DocumentApp.Attribute.BOLD]: true,
-          [DocumentApp.Attribute.FONT_SIZE]: 18,
-        });
-        markdown.push(`# **${name}**`);
-        CURRENT = H1;
-        addLineBreak(CURRENT, 3);
-        CURRENT.setAttributes({
-          [DocumentApp.Attribute.BOLD]: true,
-        });
-        DOC.setName(`${name} - ${formatDate(new Date())} - ${makeId()}`);
+        const { fileName: resumeFileName, H1: resumeH1 } = setName(name);
+        resumeCurrent = resumeH1;
+        resumeName = resumeFileName;
+        const { fileName: coverLetterFileName, H1: coverLetterH1 } = setName(
+          name,
+          coverLetterDoc,
+          coverLetterBody,
+          coverLetterMarkdown,
+          true,
+        );
+        coverLetterCurrent = coverLetterH1;
+        coverLetterName = coverLetterFileName;
       }
       if (headline) {
-        const P = setParagraph(BODY, headline);
-        P.setAttributes({
-          [DocumentApp.Attribute.FONT_SIZE]: 12,
-          [DocumentApp.Attribute.BOLD]: true,
-        });
-        markdown.push("", `## **${headline}**`);
-        CURRENT = P;
-        addLineBreak(CURRENT, 3);
+        resumeCurrent = setHeadline(headline);
+        coverLetterCurrent = setHeadline(
+          headline,
+          coverLetterBody,
+          coverLetterMarkdown,
+        );
       }
-      if (address) generateDetail("Address", address);
+      if (address) {
+        resumeCurrent = generateDetail("Address", address);
+        coverLetterCurrent = generateDetail(
+          "Address",
+          address,
+          undefined,
+          undefined,
+          coverLetterBody,
+          coverLetterMarkdown,
+        );
+      }
       if (links) {
         links.split("\n").forEach((el) => {
           const formattedString = el.replace(/^((\s+-)|-) /, "");
@@ -347,36 +469,75 @@ function createResume() {
           if (link.includes("tel:")) {
             label = "Tel";
           }
-          generateDetail(label, text, link);
+          resumeCurrent = generateDetail(label, text, link);
+          coverLetterCurrent = generateDetail(
+            label,
+            text,
+            link,
+            undefined,
+            coverLetterBody,
+            coverLetterMarkdown,
+          );
+          Logger.log({ coverLetterCurrent });
         });
-        addLineBreak(CURRENT, 3);
+        addLineBreak(resumeCurrent, 3);
+        addLineBreak(coverLetterCurrent, 12);
       }
       if (technologies || concepts || languages || traits) {
         let HEADING = generateHeading(k);
-        if (technologies) generateInformations("Technologies", technologies);
-        if (concepts) generateInformations("Concepts", concepts);
-        if (traits) generateInformations("Traits", traits);
-        if (languages) generateInformations("Languages", languages);
+        if (technologies)
+          resumeCurrent = generateInformations("Technologies", technologies);
+        if (concepts)
+          resumeCurrent = generateInformations("Concepts", concepts);
+        if (traits) resumeCurrent = generateInformations("Traits", traits);
+        if (languages)
+          resumeCurrent = generateInformations("Languages", languages);
         HEADING.setAttributes({ [DocumentApp.Attribute.BOLD]: true });
       }
     }
   }
-  addLineBreak(CURRENT, 15);
-  const P = setParagraph(BODY, CONSENT);
-  P.setAttributes({
+  addLineBreak(resumeCurrent, 15);
+  resumeCurrent = setParagraph(resumeBody, CONSENT);
+  resumeCurrent.setAttributes({
     [DocumentApp.Attribute.FONT_SIZE]: 8,
     [DocumentApp.Attribute.BOLD]: false,
     [DocumentApp.Attribute.ITALIC]: true,
   });
-  markdown.push("\n", `*${CONSENT}*`);
+  resumeMarkdown.push("\n", `*${CONSENT}*`);
 
-  const formattedMarkdown = markdown.join("\n");
-  addResume(formattedMarkdown);
-  removeEmptyParagraph(BODY);
-  BODY.setAttributes({ [DocumentApp.Attribute.FONT_FAMILY]: "Lato" });
-  DOC.saveAndClose();
+  const coverLetterValue = getCoverLetter();
+  coverLetterCurrent = setParagraph(
+    coverLetterBody,
+    coverLetterValue,
+  ).setAttributes({
+    [DocumentApp.Attribute.FONT_SIZE]: 12,
+    [DocumentApp.Attribute.BOLD]: false,
+    [DocumentApp.Attribute.ITALIC]: false,
+  });
+
+  coverLetterMarkdown.push("\n", coverLetterValue);
+
+  const formattedMarkdown = resumeMarkdown.join("\n");
+  const formattedCoverLetterMarkdown = coverLetterMarkdown.join("\n");
+
+  addResume(formattedMarkdown, formattedCoverLetterMarkdown);
+
+  removeEmptyParagraph(resumeBody);
+  removeEmptyParagraph(coverLetterBody);
+
+  resumeBody.setAttributes({ [DocumentApp.Attribute.FONT_FAMILY]: "Lato" });
+  coverLetterBody.setAttributes({
+    [DocumentApp.Attribute.FONT_FAMILY]: "Lato",
+  });
+
+  resumeDoc.saveAndClose();
+  coverLetterDoc.saveAndClose();
+
   Logger.log(
-    `Finished - check document at https://docs.google.com/document/d/${DOC_ID}/edit`,
+    `Finished
+      - check resume at https://docs.google.com/document/d/${resumeId}/edit
+      - check cover letter at https://docs.google.com/document/d/${coverLetterId}/edit
+      `,
   );
-  return `https://docs.google.com/document/d/${DOC_ID}/edit`;
+  return { resumeId, coverLetterId };
 }
