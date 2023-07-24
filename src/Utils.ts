@@ -1,6 +1,6 @@
 type Row = Record<string, any>;
 const LINK_REGEXP = new RegExp(
-  /\[(.+)\]\(((tel:[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,8})|(mailto:[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)|(((?:https?)|(?:ftp)):\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,}))\)/,
+  /\[(.+)\]\(((tel:[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,8})|(mailto:[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)|(((?:https?)|(?:ftp)):\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,}))\)/
 );
 const CONSENT =
   "I hereby give consent for my personal data included in the application to be processed for the purposes of the recruitment process in accordance with Art. 6 paragraph 1 letter a of the Regulation of the European Parliament and of the Council (EU) 2016/679 of 27 April 2016 on the protection of natural persons with regard to the processing of personal data and on the free movement of such data, and repealing Directive 95/46/EC (General Data Protection Regulation).";
@@ -56,7 +56,7 @@ function calcNestingLevel(string: string) {
  * @returns
  */
 function getLastChild(
-  body: GoogleAppsScript.Document.Body,
+  body: GoogleAppsScript.Document.Body
 ): GoogleAppsScript.Document.Element {
   const childIndex = body.getNumChildren() - 1;
   return body.getChild(childIndex);
@@ -68,7 +68,7 @@ function getLastChild(
  * @returns
  */
 function getLastListItem(
-  body: GoogleAppsScript.Document.Body,
+  body: GoogleAppsScript.Document.Body
 ): GoogleAppsScript.Document.Element | null {
   const lastChild = getLastChild(body);
   if (lastChild.getType() == DocumentApp.ElementType.LIST_ITEM) {
@@ -104,7 +104,7 @@ function deleteAllParagraphs(body: GoogleAppsScript.Document.Body) {
 function setListItem(
   body: GoogleAppsScript.Document.Body,
   string: string,
-  nestingLevel = 1,
+  nestingLevel = 1
 ): GoogleAppsScript.Document.ListItem {
   const listItem = body.appendListItem(`${string}`);
   listItem.setNestingLevel(nestingLevel);
@@ -122,7 +122,7 @@ function setIndent(
   item:
     | GoogleAppsScript.Document.Paragraph
     | GoogleAppsScript.Document.ListItem,
-  indent = 0,
+  indent = 0
 ): GoogleAppsScript.Document.Element {
   item.setIndentFirstLine(indent);
   item.setIndentStart(indent);
@@ -141,7 +141,7 @@ function setParagraph(
   string: string,
   config?: {
     indent?: number;
-  },
+  }
 ): GoogleAppsScript.Document.Paragraph {
   const idx = body.getNumChildren();
   const P = body.insertParagraph(idx, string);
@@ -199,7 +199,7 @@ function addLineBreak(
   listItem:
     | GoogleAppsScript.Document.Paragraph
     | GoogleAppsScript.Document.ListItem,
-  size = 5,
+  size = 5
 ) {
   return listItem.appendText(`\n `).setAttributes({
     [DocumentApp.Attribute.FONT_SIZE]: size,
@@ -313,7 +313,7 @@ function isDataSheet(sheetName: string) {
  */
 function filterCount(
   array: string[],
-  minCount: number,
+  minCount: number
 ): { value: string; count: number }[] {
   const obj: Record<string, number> = {};
 
@@ -383,7 +383,7 @@ function formatArray(
     value: string;
     count: number;
   }[],
-  lang = "en",
+  lang = "en"
 ): string {
   const formatter = new Intl.ListFormat(lang, {
     style: "long",
@@ -426,12 +426,15 @@ type FileType = {
  * @returns
  */
 function createFiles() {
+  const folder = DriveApp.createFolder("Resumer folder");
+  const folderId = folder.getId();
   const details = ["resume", "cover_letter"].reduce<
-    Record<"resume" | "cover_letter", FileType>
+    Record<"resume" | "cover_letter", FileType> & { folderId: string }
   >(
     (acc, val, idx) => {
       const doc = DocumentApp.create(`Resumer - ${idx}`);
       const id = doc.getId();
+      DriveApp.getFileById(id).moveTo(folder);
       const body = doc.getBody();
       const markdown = [];
       const current = "";
@@ -451,10 +454,11 @@ function createFiles() {
 
       return acc;
     },
-    { resume: {}, cover_letter: {} } as {
+    { resume: {}, cover_letter: {}, folderId } as {
       resume: FileType;
       cover_letter: FileType;
-    },
+      folderId: string;
+    }
   );
 
   return details;

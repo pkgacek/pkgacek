@@ -17,7 +17,7 @@ function onOpen() {
  */
 function recalculate() {
   const sheet = SpreadsheetApp.getActive().getSheetByName(
-    "Settings - Recalculate",
+    "Settings - Recalculate"
   );
   const cell = sheet.getRange("A2");
   const value = cell.getValue();
@@ -29,18 +29,29 @@ function recalculate() {
  * @returns
  */
 function getResume() {
-  const { resumeId, coverLetterId } = createResume();
+  const { resumeId, coverLetterId, folderId } = createResume();
   const ui = SpreadsheetApp.getUi();
-  const html = [
-    "Checkout files:",
-    `<a href="https://docs.google.com/document/d/${resumeId}/edit" target="_blank" rel="noopener noreferrer">Go to your Resume</a>`,
-    "<br>",
-    `<a href="https://docs.google.com/document/d/${coverLetterId}/edit" target="_blank" rel="noopener noreferrer">Go to your Cover Letter</a>`,
-  ];
-  const htmlOutput = HtmlService.createHtmlOutput(html.join("\n"))
+  const html = `
+  <style>
+  * {
+    font-family: 'Lato', sans-serif;
+  }
+  </style>
+  <h2>Generated files</h2>
+  <ul>
+    <li><a href="hhttps://drive.google.com/drive/folders/${folderId}" target="_blank" rel="noopener noreferrer">Resumer folder</a>
+    </li>
+    <ul>
+      <li><a href="https://docs.google.com/document/d/${resumeId}" target="_blank" rel="noopener noreferrer">Resume</a>
+      </li>
+      <li><a href="https://docs.google.com/document/d/${coverLetterId}" target="_blank" rel="noopener noreferrer">Cover Letter</a></li>
+    </ul>
+  </ul>
+  `;
+  const htmlOutput = HtmlService.createHtmlOutput(html)
     .setWidth(400)
     .setHeight(250);
-  ui.showModalDialog(htmlOutput, "Resume created!");
+  ui.showModalDialog(htmlOutput, "Resume generated");
 }
 /**
  * @name addResume
@@ -56,7 +67,7 @@ function addResume(resume: string, coverLetter: string) {
   resumeCell.setValue(resume);
 
   const coverLetterSheet = SpreadsheetApp.getActive().getSheetByName(
-    "Cover Letter - Markdown",
+    "Cover Letter - Markdown"
   );
   const coverLetterCell = coverLetterSheet.getRange("A2");
   coverLetterCell.setValue(coverLetter);
@@ -87,7 +98,7 @@ function GETCOLUMNDATA(
   header = "technologies",
   key = true,
   minCount = 1,
-  maxSize = 100,
+  maxSize = 100
 ) {
   if (!header) throw new Error("Header is not defined.");
   if (typeof header !== "string") throw new Error("Header must be a string.");
@@ -132,7 +143,7 @@ function GETCOLUMNDATA(
     const countData = filterCount(formattedData, minCount);
     const maxSizedData = countData.splice(0, maxSize);
     const sortedData = maxSizedData.sort((a, b) =>
-      a.value.localeCompare(b.value),
+      a.value.localeCompare(b.value)
     );
     const parsedData = formatArray(sortedData);
     return parsedData;
