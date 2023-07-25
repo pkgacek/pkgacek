@@ -39,7 +39,6 @@ function fetchData(systemContent: string, userContent: string): string {
       UrlFetchApp.fetch(BASE_URL, options) as any as string,
     );
     if (response.error) {
-      Logger.log({ response });
       return response.error.message;
     }
     return response.choices[0].message.content;

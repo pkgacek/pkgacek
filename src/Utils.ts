@@ -429,7 +429,10 @@ function createFiles() {
   const folder = DriveApp.createFolder("Resumer folder");
   const folderId = folder.getId();
   const details = ["resume", "cover_letter"].reduce<
-    Record<"resume" | "cover_letter", FileType> & { folderId: string }
+    Record<"resume" | "cover_letter", FileType> & {
+      folderId: string;
+      folder: GoogleAppsScript.Drive.Folder;
+    }
   >(
     (acc, val, idx) => {
       const doc = DocumentApp.create(`Resumer - ${idx}`);
@@ -454,10 +457,11 @@ function createFiles() {
 
       return acc;
     },
-    { resume: {}, cover_letter: {}, folderId } as {
+    { resume: {}, cover_letter: {}, folderId, folder } as {
       resume: FileType;
       cover_letter: FileType;
       folderId: string;
+      folder: GoogleAppsScript.Drive.Folder;
     },
   );
 

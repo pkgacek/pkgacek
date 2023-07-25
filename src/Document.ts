@@ -1,3 +1,6 @@
+const FOLDER_ID =
+  PropertiesService.getScriptProperties().getProperty("FOLDER_ID");
+
 /**
  * @name createResume
  * @description This generates a new resume as well as new cover letter file.
@@ -8,7 +11,7 @@ function createResume(): {
   coverLetterId: string;
   folderId: string;
 } {
-  const { resume, cover_letter, folderId } = createFiles();
+  const { resume, cover_letter, folderId, folder } = createFiles();
   const {
     id: resumeId,
     doc: resumeDoc,
@@ -30,6 +33,11 @@ function createResume(): {
   DriveApp.getFolderById(folderId).setName(
     `Resumer - ${currentDate} - ${randomId}`,
   );
+  if (FOLDER_ID) {
+    var destination = DriveApp.getFolderById(FOLDER_ID);
+    destination.addFolder(folder);
+    folder.getParents().next().removeFolder(folder);
+  }
   /**
    * @name setName
    * @description

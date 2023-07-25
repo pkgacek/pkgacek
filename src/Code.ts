@@ -17,7 +17,7 @@ function onOpen() {
  */
 function recalculate() {
   const sheet = SpreadsheetApp.getActive().getSheetByName(
-    "Settings - Recalculate"
+    "Settings - Recalculate",
   );
   const cell = sheet.getRange("A2");
   const value = cell.getValue();
@@ -67,7 +67,7 @@ function addResume(resume: string, coverLetter: string) {
   resumeCell.setValue(resume);
 
   const coverLetterSheet = SpreadsheetApp.getActive().getSheetByName(
-    "Cover Letter - Generated"
+    "Cover Letter - Generated",
   );
   const coverLetterCell = coverLetterSheet.getRange("A2");
   coverLetterCell.setValue(coverLetter);
@@ -98,7 +98,7 @@ function GETCOLUMNDATA(
   header = "technologies",
   key = true,
   minCount = 1,
-  maxSize = 100
+  maxSize = 100,
 ) {
   if (!header) throw new Error("Header is not defined.");
   if (typeof header !== "string") throw new Error("Header must be a string.");
@@ -143,7 +143,7 @@ function GETCOLUMNDATA(
     const countData = filterCount(formattedData, minCount);
     const maxSizedData = countData.splice(0, maxSize);
     const sortedData = maxSizedData.sort((a, b) =>
-      a.value.localeCompare(b.value)
+      a.value.localeCompare(b.value),
     );
     const parsedData = formatArray(sortedData);
     return parsedData;
